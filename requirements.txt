@@ -1,0 +1,21 @@
+sqlalchemy>=2.0.0
+psycopg2-binary
+python-dotenv
+pyarrow
+fastparquet
+
+# 基础数据处理
+pandas
+numpy
+shap
+
+# 机器学习核心
+xgboost==2.0.3
+scikit-learn
+
+# 绘图与可视化（用于展示你的模型成果）
+matplotlib
+seaborn
+streamlit
+# (可选) 如果你以后想把模型存起来给 Power BI 调用
+joblib

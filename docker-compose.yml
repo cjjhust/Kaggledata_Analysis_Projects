@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  cleaner:
+    build: .  # 告诉 Docker 使用当前目录下的 Dockerfile 构建
+    container_name: logistik_cleaner
+    # 1. 环境隔离：容器内只运行我们需要的环境
+    environment:
+      - PYTHONUNBUFFERED=1
+      # 重点 1：添加数据库连接变量
+      # 注意：这里的 'db' 是你在 infrastructure/docker-compose.yml 里定义的 service 名字
+      - DB_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}
+    env_file:
+      - .env  # 这行会自动把 .env 里的变量注入容器的 shell 环境变量中
+    volumes:
+      # A. 代码挂载：这里必须挂载主机一份，否则你在 Mac 上写代码，容器里看不到
+      - ./scripts:/app/scripts
+      
+      # B. 数据挂载（只读）：重点！将主机下好的数据以只读方式挂给容器
+      # 这样容器能读到数据，但绝对无法污染或修改你 Mac 上的原始数据
+      - ./data_raw:/app/data_raw:ro
+      - ./requirements.txt:/app/requirements.txt # 也可以挂载进去方便修改
+      # C. 匿名卷挂载（隔离核心）：
+      # 这会创建一个只存在于 Docker 内部的临时存储区。
+      # 容器运行产生的中间文件、缓存、库文件都存这，不写回 Mac 主机磁盘。
+      - /app/outputs
+      - /root/.cache
+    ports: 
+      - "8501:8501"
+    networks:
+      - kaggle_shared_net
+    working_dir: /app
+    tty: true
+    stdin_open: true
+    # 启动时自动静默安装库，不干扰主机
+    command: /bin/bash
+      #sh -c "pip install --no-cache-dir pandas scikit-learn matplotlib && /bin/bash"
+
+networks:
+  #logistik_net:
+    #driver: bridge
+  kaggle_shared_net:
+    external: true  # 告诉 Docker：这个网络是外面已经建好的（由 infras 启动），直接加入即可

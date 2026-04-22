@@ -1,0 +1,21 @@
+Table,Column,Dtype,Non-Null Count,Null Count,Null Percentage,Unique Values
+dbtrainrides,ID,object,2061357,0,0.0,2029894
+dbtrainrides,line,object,2061357,0,0.0,296
+dbtrainrides,path,object,1850002,211355,10.25,22153
+dbtrainrides,eva_nr,int64,2061357,0,0.0,1996
+dbtrainrides,category,int64,2061357,0,0.0,5
+dbtrainrides,station,object,2061357,0,0.0,1996
+dbtrainrides,state,object,2061357,0,0.0,16
+dbtrainrides,city,object,2061357,0,0.0,1292
+dbtrainrides,zip,int64,2061357,0,0.0,1651
+dbtrainrides,long,float64,2061357,0,0.0,1995
+dbtrainrides,lat,float64,2061357,0,0.0,1996
+dbtrainrides,arrival_plan,object,1850002,211355,10.25,10084
+dbtrainrides,departure_plan,object,2061357,0,0.0,10089
+dbtrainrides,arrival_change,object,1585727,475630,23.07,10122
+dbtrainrides,departure_change,object,1721431,339926,16.49,10118
+dbtrainrides,arrival_delay_m,int64,2061357,0,0.0,116
+dbtrainrides,departure_delay_m,int64,2061357,0,0.0,121
+dbtrainrides,info,object,645341,1416016,68.69,7
+dbtrainrides,arrival_delay_check,object,2061357,0,0.0,2
+dbtrainrides,departure_delay_check,object,2061357,0,0.0,2

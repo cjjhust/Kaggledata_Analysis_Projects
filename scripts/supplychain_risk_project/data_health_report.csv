@@ -1,0 +1,64 @@
+Table,Column,Dtype,Non-Null Count,Null Count,Null Percentage,Unique Values
+datacosupplychaindataset,Type,object,180519,0,0.0,4
+datacosupplychaindataset,Days for shipping (real),int64,180519,0,0.0,7
+datacosupplychaindataset,Days for shipment (scheduled),int64,180519,0,0.0,4
+datacosupplychaindataset,Benefit per order,float64,180519,0,0.0,21998
+datacosupplychaindataset,Sales per customer,float64,180519,0,0.0,2927
+datacosupplychaindataset,Delivery Status,object,180519,0,0.0,4
+datacosupplychaindataset,Late_delivery_risk,int64,180519,0,0.0,2
+datacosupplychaindataset,Category Id,int64,180519,0,0.0,51
+datacosupplychaindataset,Category Name,object,180519,0,0.0,50
+datacosupplychaindataset,Customer City,object,180519,0,0.0,563
+datacosupplychaindataset,Customer Country,object,180519,0,0.0,2
+datacosupplychaindataset,Customer Email,object,180519,0,0.0,1
+datacosupplychaindataset,Customer Fname,object,180519,0,0.0,782
+datacosupplychaindataset,Customer Id,int64,180519,0,0.0,20652
+datacosupplychaindataset,Customer Lname,object,180511,8,0.0,1109
+datacosupplychaindataset,Customer Password,object,180519,0,0.0,1
+datacosupplychaindataset,Customer Segment,object,180519,0,0.0,3
+datacosupplychaindataset,Customer State,object,180519,0,0.0,46
+datacosupplychaindataset,Customer Street,object,180519,0,0.0,7458
+datacosupplychaindataset,Customer Zipcode,float64,180516,3,0.0,995
+datacosupplychaindataset,Department Id,int64,180519,0,0.0,11
+datacosupplychaindataset,Department Name,object,180519,0,0.0,11
+datacosupplychaindataset,Latitude,float64,180519,0,0.0,11250
+datacosupplychaindataset,Longitude,float64,180519,0,0.0,4487
+datacosupplychaindataset,Market,object,180519,0,0.0,5
+datacosupplychaindataset,Order City,object,180519,0,0.0,3597
+datacosupplychaindataset,Order Country,object,180519,0,0.0,164
+datacosupplychaindataset,Order Customer Id,int64,180519,0,0.0,20652
+datacosupplychaindataset,order date (DateOrders),object,180519,0,0.0,65752
+datacosupplychaindataset,Order Id,int64,180519,0,0.0,65752
+datacosupplychaindataset,Order Item Cardprod Id,int64,180519,0,0.0,118
+datacosupplychaindataset,Order Item Discount,float64,180519,0,0.0,1017
+datacosupplychaindataset,Order Item Discount Rate,float64,180519,0,0.0,18
+datacosupplychaindataset,Order Item Id,int64,180519,0,0.0,180519
+datacosupplychaindataset,Order Item Product Price,float64,180519,0,0.0,75
+datacosupplychaindataset,Order Item Profit Ratio,float64,180519,0,0.0,162
+datacosupplychaindataset,Order Item Quantity,int64,180519,0,0.0,5
+datacosupplychaindataset,Sales,float64,180519,0,0.0,193
+datacosupplychaindataset,Order Item Total,float64,180519,0,0.0,2927
+datacosupplychaindataset,Order Profit Per Order,float64,180519,0,0.0,21998
+datacosupplychaindataset,Order Region,object,180519,0,0.0,23
+datacosupplychaindataset,Order State,object,180519,0,0.0,1089
+datacosupplychaindataset,Order Status,object,180519,0,0.0,9
+datacosupplychaindataset,Order Zipcode,float64,24840,155679,86.24,609
+datacosupplychaindataset,Product Card Id,int64,180519,0,0.0,118
+datacosupplychaindataset,Product Category Id,int64,180519,0,0.0,51
+datacosupplychaindataset,Product Description,object,0,180519,100.0,0
+datacosupplychaindataset,Product Image,object,180519,0,0.0,118
+datacosupplychaindataset,Product Name,object,180519,0,0.0,118
+datacosupplychaindataset,Product Price,float64,180519,0,0.0,75
+datacosupplychaindataset,Product Status,int64,180519,0,0.0,1
+datacosupplychaindataset,shipping date (DateOrders),object,180519,0,0.0,63701
+datacosupplychaindataset,Shipping Mode,object,180519,0,0.0,4
+descriptiondatacosupplychain,FIELDS,object,52,0,0.0,52
+descriptiondatacosupplychain,DESCRIPTION,object,52,0,0.0,51
+tokenized_access_logs,Product,object,469977,0,0.0,76
+tokenized_access_logs,Category,object,469977,0,0.0,33
+tokenized_access_logs,Date,object,469977,0,0.0,160815
+tokenized_access_logs,Month,object,469977,0,0.0,5
+tokenized_access_logs,Hour,int64,469977,0,0.0,24
+tokenized_access_logs,Department,object,469977,0,0.0,6
+tokenized_access_logs,ip,object,469977,0,0.0,3340
+tokenized_access_logs,url,object,469977,0,0.0,152

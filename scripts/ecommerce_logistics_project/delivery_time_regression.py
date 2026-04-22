@@ -1,0 +1,183 @@
+import pandas as pd
+import numpy as np
+from sqlalchemy import create_engine
+import os
+from xgboost import XGBRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.preprocessing import LabelEncoder
+
+# --- 1. 数据库连接 ---
+engine = create_engine(f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:5432/{os.getenv('DB_NAME')}")
+SCHEMA_NAME = "ecommerce_logistics"
+
+# --- 2. 核心 SQL (增加卖家发货延迟计算) ---
+query = f"""
+WITH items_agg AS (
+    SELECT 
+        oi.order_id,
+        SUM(oi.price) as total_price,
+        SUM(oi.freight_value) as total_freight,
+        COUNT(oi.order_item_id) as total_items,
+        SUM(p.product_weight_g) as total_weight,
+        AVG(p.product_photos_qty) as avg_photos_qty,
+        MAX(p.product_category_name) as raw_category,
+        MAX(oi.seller_id) as main_seller_id,
+        -- 新增：计算卖家发货限期与交给物流商时间之差 (即卖家发货延迟)
+        -- 注意：这里需要聚合，我们取该订单内最晚的限期值
+        MAX(oi.shipping_limit_date) as max_shipping_limit
+    FROM {SCHEMA_NAME}.olist_order_items_dataset oi
+    LEFT JOIN {SCHEMA_NAME}.olist_products_dataset p ON oi.product_id = p.product_id
+    GROUP BY 1
+),
+pay_agg AS (
+    SELECT order_id, MAX(payment_type) as primary_payment_type, MAX(payment_installments) as max_installments
+    FROM {SCHEMA_NAME}.olist_order_payments_dataset GROUP BY 1
+)
+SELECT 
+    o.order_id,
+    o.order_purchase_timestamp,
+    o.order_delivered_customer_date,
+    o.order_estimated_delivery_date,
+    o.order_delivered_carrier_date, -- 新增：传给物流商的时间
+    i.max_shipping_limit,           -- 新增：卖家最晚发货限期
+    r.review_score,
+    COALESCE(t.product_category_name_english, i.raw_category) as category_english,
+    i.total_price, i.total_freight, i.total_items, i.total_weight, i.avg_photos_qty,
+    pa.primary_payment_type, pa.max_installments,
+    c.customer_state, s.seller_state
+FROM {SCHEMA_NAME}.olist_orders_dataset o
+JOIN {SCHEMA_NAME}.olist_order_reviews_dataset r ON o.order_id = r.order_id
+INNER JOIN items_agg i ON o.order_id = i.order_id
+LEFT JOIN pay_agg pa ON o.order_id = pa.order_id
+LEFT JOIN {SCHEMA_NAME}.olist_customers_dataset c ON o.customer_id = c.customer_id
+LEFT JOIN {SCHEMA_NAME}.olist_sellers_dataset s ON i.main_seller_id = s.seller_id
+LEFT JOIN {SCHEMA_NAME}.product_category_name_translation t ON i.raw_category = t.product_category_name
+WHERE o.order_status = 'delivered';
+"""
+
+df = pd.read_sql(query, engine)
+# --- 3. 特征工程 (加入新字段逻辑) ---
+def run_engineering(df):
+    df = df.copy()
+    time_cols = ['order_purchase_timestamp', 'order_delivered_customer_date', 
+                 'order_estimated_delivery_date', 'order_delivered_carrier_date', 'max_shipping_limit']
+    for col in time_cols:
+        df[col] = pd.to_datetime(df[col])
+    
+    # 过滤核心缺失值
+    df = df.dropna(subset=['order_delivered_customer_date', 'order_delivered_carrier_date']).copy()
+    
+    # A. 配送天数指标
+    df['actual_days'] = (df['order_delivered_customer_date'] - df['order_purchase_timestamp']).dt.days
+    df['delay_days'] = (df['order_delivered_customer_date'] - df['order_estimated_delivery_date']).dt.days
+    
+    # B. 新增特征：卖家发货延迟天数 (shipping_limit - delivered_carrier)
+    # 根据你的逻辑：limit 减去 carrier，如果结果为负，说明卖家早于限期交货
+    df['seller_ship_delay_days'] = (df['order_delivered_carrier_date']-df['max_shipping_limit']).dt.days
+    
+    # C. 业务洞察：7天心理阈值标记 (参考报告 x=7 结论)
+    df['is_late_over_7'] = (df['delay_days'] > 7).astype(int)
+    
+    # D. 财务与属性
+    df['freight_ratio'] = df['total_freight'] / (df['total_price'] + df['total_freight'] + 0.1)
+    
+    # 填充其余小额缺失值
+    for col in ['total_weight', 'avg_photos_qty']:
+        df[col] = df[col].fillna(df[col].median())
+        
+    cat_cols = ['category_english', 'customer_state', 'seller_state', 'primary_payment_type']
+    for col in cat_cols:
+        df[col] = df[col].fillna('unknown')
+        df[col] = LabelEncoder().fit_transform(df[col].astype(str))
+    
+    df['target'] = (df['review_score'] <= 2).astype(int)
+    return df
+
+df_ml = run_engineering(df)
+# --- 1. 特征准备 ---
+# 使用之前定义的 run_engineering 函数处理好的 df
+def prepare_regression_data(df):
+    # 只针对已经送达的订单进行训练
+    # 我们的目标是预测：如果发生延误，会延误几天？
+    # 业务逻辑：我们主要关心 delay_days > 0 的样本，
+    # 或者全量训练以让模型学会区分“准时(负值)”与“延误(正值)”
+    
+    df_reg = df.copy()
+    # 为什么要 + offset？因为 log 只能处理正数。
+    # 假设 delay_days 最小值为 -20，我们加 21 确保全为正。
+    offset = abs(df_reg['delay_days'].min()) + 1
+    y_log = np.log1p(df_reg['delay_days'] + offset)
+    
+    # 目标变量：具体的延误天数 (实际送达 - 预计送达)
+    # 正数表示延误，负数表示提前
+    #y = df_reg['delay_days'] 
+    
+    # 选择特征 (剔除掉 review_score 等事后特征)
+    features = [
+        'total_items', 'total_weight', 'freight_ratio', 
+        'seller_ship_delay_days', 'category_english', 
+        'customer_state', 'seller_state', 'primary_payment_type',
+        'avg_photos_qty', 'max_installments'
+    ]
+    
+    X = df_reg[features]
+    return X, y_log,offset
+
+X_reg, y_log, offset = prepare_regression_data(df_ml)
+
+# --- 2. 训练回归模型 ---
+X_train, X_test, y_train, y_test = train_test_split(X_reg, y_log, test_size=0.2, random_state=42)
+
+# 使用 XGBRegressor
+reg_model = XGBRegressor(
+    n_estimators=300, 
+    learning_rate=0.05, 
+    max_depth=6, 
+    subsample=0.8,
+    objective='reg:squarederror' # 回归损失函数
+)
+
+reg_model.fit(X_train, y_train)
+
+# --- 3. 模型评估 ---
+y_log_pred = reg_model.predict(X_test)
+
+# 还原回真实天数：先 exp 再减去 offset
+y_pred_final = np.expm1(y_log_pred) - offset
+y_test_final = np.expm1(y_test) - offset
+
+# 评估指标
+mae = mean_absolute_error(y_test_final, y_pred_final) # 平均绝对误差
+r2 = r2_score(y_test_final, y_pred_final)            # R方，解释力
+
+print(f"--- 延误时间预测模型报告(log Transform) ---")
+print(f"平均绝对误差 (MAE): {mae:.2f} 天")
+print(f"模型解释力 (R2 Score): {r2:.2f}")
+
+# 1. 将预测结果和真实评论分数拼在一起
+results = pd.DataFrame({
+    'predicted_delay': y_pred_final, # 还原后的预测天数
+    'real_review': df_ml.loc[X_test.index, 'review_score']
+})
+
+# 2. 按预测延误从大到小排序
+results = results.sort_values(by='predicted_delay', ascending=False)
+
+# 3. 取出预测延误最严重的前 10% 样本
+top_10_percent_count = int(len(results) * 0.1)
+top_10_samples = results.head(top_10_percent_count)
+
+# 4. 计算这 10% 样本里 1 星差评的占比
+total_1_star = (results['real_review'] == 1).sum()
+captured_1_star = (top_10_samples['real_review'] == 1).sum()
+
+lift_score = captured_1_star / total_1_star
+
+print(f"全场总共有 {total_1_star} 个 1 星差评")
+print(f"模型预测延误最严重的 Top 10% 订单中，抓到了 {captured_1_star} 个 1 星差评")
+print(f"这意味着你只需关注 10% 的订单，就能覆盖全场 {lift_score:.2%} 的差评风险！")
+# --- 4. 业务应用：预测未送达订单的风险 ---
+# 假设你有一批还没送达的新订单 (df_new)
+# df_new['predicted_delay'] = reg_model.predict(X_new)
+# 如果预测延迟 > 3天，标记为“中风险”；如果预测延迟 > 7天，标记为“高风险”。

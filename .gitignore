@@ -1,0 +1,17 @@
+# 敏感信息（绝对不能传！）
+.env
+.vscode/
+# Python 缓存
+__pycache__/
+*.py[cod]
+
+# 数据文件（通常很大，不传，在 README 中说明如何获取）
+data_raw/
+outputs/
+
+# 虚拟环境
+.venv/
+env/
+
+# 操作系统文件
+.DS_Store

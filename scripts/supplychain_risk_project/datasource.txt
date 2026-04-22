@@ -1,0 +1,45 @@
+https://www.kaggle.com/datasets/shashwatwork/dataco-smart-supply-chain-for-big-data-analysis
+
+这份数据集非常丰富，涵盖了供应链中的物流（Logistics）、财务（Financial）、客户（Customer）和系统日志（Web Logs）四大维度。它不仅能让你练习 SQL 和数据处理，还能让你站在一个“供应链分析师”的角度去解决实际业务问题。
+
+基于你提供的字段和概览，你可以从以下四个核心方向切入：
+
+1. 供应链风险分析（最切合你的文件名 supplychainrisk）
+这是该数据集的核心价值所在。
+
+预测迟到风险： 利用 Late_delivery_risk（迟到风险标识）和 Delivery Status 作为标签，分析哪些因素导致了延迟。
+
+物流效率审计： 计算 Days for shipping (real) 与 Days for shipment (scheduled) 之间的差值。分析哪些 Shipping Mode（运输模式）或特定的 Order Region（地区）最容易出现计划与实际脱节的情况。
+
+欺诈检测： Order Status 中包含 SUSPECTED_FRAUD（疑似欺诈）。你可以分析欺诈订单在 Type（支付方式）、Customer Country 或 Sales 上的特征。
+
+2. 财务与获利能力分析
+盈利漏斗分析： 从 Sales（总销售额）出发，减去 Order Item Discount（折扣），观察 Order Profit Per Order（净利润）。
+
+折扣策略评估： 分析 Order Item Discount Rate（折扣率）对销售量的提升作用，以及它是否过度挤压了 Order Item Profit Ratio（利润率）。
+
+高价值品类挖掘： 按 Category Name 聚合，找出哪些产品线贡献了最高的销售额，哪些又是“赔本赚吆喝”。
+
+3. 客户画像与行为分析
+客户价值模型（RFM）：
+
+Recency（近度）： 利用 order date (DateOrders) 计算客户最后一次购买时间。
+
+Frequency（频度）： 利用 Customer Id 统计订单频率。
+
+Monetary（额度）： 利用 Sales per customer 计算总贡献。
+
+地理分布分析： 利用 Latitude 和 Longitude 或 Order City，在地图上可视化全球订单密度，看看哪些市场（Market）是增长引擎。
+
+细分市场研究： 比较 Consumer、Corporate、Home Office 三类客户在购买习惯上的差异。
+
+4. 数字化足迹与关联分析（结合 tokenized_access_logs 表）
+这是这份数据最有趣的地方——你可以把用户在网站上的浏览行为与最终的下单行为关联起来。
+
+转化路径分析： tokenized_access_logs 记录了 IP 和 URL。你可以分析用户在下单前通常会浏览哪些 Category，或者在哪些 Hour（小时）最活跃。
+
+流量来源压力测算： 统计不同时间段的访问量，分析网站访问高峰是否与订单创建高峰（order date）同步，为库存准备和服务器带宽提供参考。
+
+处理空值： 你的概览显示 Product Description 100% 缺失，Order Zipcode 86% 缺失，分析时请直接忽略这些字段。
+
+时间转换： order date 是 object 类型，在 SQL 里预览或处理前，记得先转换成时间格式
