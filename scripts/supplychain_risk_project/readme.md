@@ -40,6 +40,12 @@ Das Modell erreichte auf dem unabhängigen Testdatensatz folgende Werte:
 - **ROC-AUC**: `0.7783` (78% 区分度)
 - **LogLoss**: `0.5252`
 
+## 📊 Modellbewertung | 模型评估
+
+ Das Modell weist mit einem **AUC von 0,78** eine solide Trennschärfe auf, was auf eine hohe Zuverlässigkeit bei der Unterscheidung von Risikofaktoren hindeutet. Während die **Genauigkeit (Accuracy) bei 72 %** liegt, lässt der relativ niedrige **LogLoss (0,52)** darauf schließen, dass das Modell nicht nur korrekte Klassifizierungen vornimmt, sondern auch über gut kalibrierte Wahrscheinlichkeitsschätzungen verfügt und somit keine „übermäßigen Fehlprognosen“ abgibt.
+
+该模型展现了稳健的分辨能力，**AUC 为 0.78**，表明在识别风险因素方面具有高可靠性。虽然**准确率为 72%**，但较低的 **LogLoss (0.52)** 说明模型的概率估计经过了良好的校准，能够给出合理的概率预测，而非盲目自信。
+
 ---
 
 ## 🔍 Wichtige Erkenntnisse | 核心洞察
